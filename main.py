@@ -43,7 +43,33 @@ def dictionary_building(paragraph_list):
     bag_of_words = []
     for paragraph in paragraph_list:
         bag_of_words.append(dictionary.doc2bow(paragraph))
-    return bag_of_words
+    return bag_of_words, dictionary
+
+
+def retrieval_models(corpus, dictionary):
+    # Creating a tfid model out of the corpus from problem 2
+    tfid_model = gensim.models.TfidfModel(corpus)
+    # Creating a list of weights for each word in the dictionary
+    tfidf_corpus = tfid_model[corpus]
+    # Creating similarity transformation
+    tfid_similarity = gensim.similarities.MatrixSimilarity(tfidf_corpus, num_features=len(dictionary))
+    # Doing the same procedure for LSI
+    lsi_model = gensim.models.LsiModel(tfidf_corpus, id2word=dictionary, num_topics=100)
+    lsi_corpus = lsi_model[corpus]
+    lsi_similarity = gensim.similarities.MatrixSimilarity(lsi_corpus, num_features=len(dictionary))
+    print("First 3 topics: ")
+    topics = lsi_model.show_topics(3)
+    for topic in topics:
+        print(topic)
+
+
+def query(query_sentence, dictionary):
+    _, query = preprocessing(query_sentence)
+    query, _ = dictionary_building(query)
+    tfid_model = gensim.models.TfidfModel(query)
+    tfidf_corpus = tfid_model[query]
+    tfid_similarity = gensim.similarities.MatrixSimilarity(tfidf_corpus, num_features=len(dictionary))
+    print(tfid_similarity)
 
 
 def main():
@@ -51,8 +77,9 @@ def main():
     paragraphs = f.read()
     f.close()
     original_paragraphs, paragraphs = preprocessing(paragraphs)
-
-    dictionary_building(paragraphs)
+    corpus, dictionary = dictionary_building(paragraphs)
+    retrieval_models(corpus, dictionary)
+    query("How taxes influence Economics", dictionary)
 
 
 if __name__ == '__main__':
